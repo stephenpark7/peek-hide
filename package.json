@@ -9,16 +9,31 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
   "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "peek-hide.helloWorld",
-        "title": "Hello World"
-      }
-    ]
-  },
+	"contributes": {
+		"commands": [
+			{
+				"command": "extension.hideFiles",
+				"title": "Hide Excluded Files"
+			},
+			{
+				"command": "extension.showFiles",
+				"title": "Show Excluded Files"
+			},
+			{
+				"command": "extension.toggleFiles",
+				"title": "Toggle Excluded Files"
+			}
+		],
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "extension.toggleFiles",
+					"group": "2_workspace"
+				}
+			]
+		}
+	},
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
