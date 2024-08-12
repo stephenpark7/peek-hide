@@ -3,6 +3,7 @@
   "displayName": "peek-hide",
   "description": "",
   "author": "Stephen Park",
+  "publisher": "stephenpark7",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.92.0"
