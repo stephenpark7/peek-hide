@@ -2,6 +2,7 @@
   "name": "peek-hide",
   "displayName": "peek-hide",
   "description": "",
+  "author": "Stephen Park",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.92.0"
@@ -14,23 +15,36 @@
 		"commands": [
 			{
 				"command": "extension.hideFiles",
-				"title": "Hide Excluded Files"
+				"title": "Hide Excluded Files",
+        "category": "peek-hide"
 			},
 			{
 				"command": "extension.showFiles",
-				"title": "Show Excluded Files"
+				"title": "Show Excluded Files",
+        "category": "peek-hide"
 			},
 			{
 				"command": "extension.toggleFiles",
-				"title": "Toggle Excluded Files"
-			}
+				"title": "Toggle Excluded Files",
+        "category": "peek-hide"
+			},
+      {
+        "command": "extension.addFile",
+        "title": "Add File to Excluded",
+        "category": "peek-hide"
+      }
 		],
 		"menus": {
 			"explorer/context": [
 				{
 					"command": "extension.toggleFiles",
 					"group": "2_workspace"
-				}
+				},
+        {
+          "when": "listHasSelectionOrFocus",
+          "command": "extension.addFile",
+          "group": "2_workspace"
+        }
 			]
 		}
 	},

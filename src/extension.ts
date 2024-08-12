@@ -4,56 +4,72 @@ export const activate = (context: vscode.ExtensionContext) => {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('extension.hideFiles', hide),
 		vscode.commands.registerCommand('extension.showFiles', show),
-		vscode.commands.registerCommand('extension.toggleFiles', toggle)
+		vscode.commands.registerCommand('extension.toggleFiles', toggle),
+		vscode.commands.registerCommand('extension.addFile', add),
 	);
 };
 
 export const deactivate = () => { };
 
-const hide = () => {
-	updateConfiguration(true);
+const hide = () => updateConfiguration(true);
+const show = () => updateConfiguration(false);
+const toggle = () => updateConfiguration();
+
+const add = (e: any) => {
+	if (e === undefined) { throw new Error('No file selected'); }
+	if (e.scheme !== 'file') { return; }
+
+	const filePath = e.fsPath;
+	const relativeFilePath = getRelativeFilePath(filePath);
+	const generalSettings = getGeneralSettings();
+	const excludedFiles = generalSettings[0].excludes;
+
+	if (isFileExcluded(excludedFiles, relativeFilePath)) { return; }
+
+	const settings: { uri?: vscode.Uri, excludes: any, target: vscode.ConfigurationTarget }[] = [...generalSettings];
+	addFileToConfig(settings[0].uri, configKey, { ...excludedFiles, [relativeFilePath]: true }, settings[0].target);
 };
 
-const show = () => {
-	updateConfiguration(false);
+const getRelativeFilePath = (filePath: string) => {
+	const rootPath = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+	return filePath.replace(rootPath || '', '').replace(/^\//, '');
 };
 
-const toggle = () => {
-	updateConfiguration();
+const isFileExcluded = (excludedFiles: any, relativeFilePath: string) => {
+	return Object.keys(excludedFiles).includes(relativeFilePath);
+};
+
+const addFileToConfig = (uri: vscode.Uri | undefined, key: string, value: any, target: vscode.ConfigurationTarget) => {
+	vscode.workspace.getConfiguration(undefined, uri).update(key, value, target);
 };
 
 const configKey = 'files.exclude';
 
 const updateConfiguration = (value?: boolean) => {
-	const settings: { uri?: vscode.Uri, excludes: any, target: vscode.ConfigurationTarget }[] = [
-		...getGeneralSettings(),
-		...getFoldersSettings()
-	];
+	const settings: { uri?: vscode.Uri, excludes: any, target: vscode.ConfigurationTarget }[] = [...getGeneralSettings(), ...getFoldersSettings()];
 
 	if (value === undefined) {
 		value = !getCurrentState(settings);
 	}
 
-	for (const setting of settings) {
+	settings.forEach(setting => {
 		vscode.workspace.getConfiguration(undefined, setting.uri)
 			.update(configKey, setState(setting.excludes, value), setting.target);
-	}
+	});
 };
 
 const getGeneralSettings = () => {
-	const config = vscode.workspace.getConfiguration()
-		.inspect(configKey);
-
+	const config = vscode.workspace.getConfiguration().inspect(configKey);
 	const settings = [];
 
-	if (config && config.globalValue) {
+	if (config?.globalValue) {
 		settings.push({
 			excludes: config.globalValue,
 			target: vscode.ConfigurationTarget.Global
 		});
 	}
 
-	if (config && config.workspaceValue) {
+	if (config?.workspaceValue) {
 		settings.push({
 			excludes: config.workspaceValue,
 			target: vscode.ConfigurationTarget.Workspace
@@ -65,27 +81,18 @@ const getGeneralSettings = () => {
 
 const getFoldersSettings = () => {
 	const folders = vscode.workspace.workspaceFolders;
-	if (!folders) {
-		return [];
-	}
+	if (!folders) { return []; }
 
-	const settings = [];
-	for (const folder of folders) {
-		const config = vscode.workspace.getConfiguration(undefined, folder.uri)
-			.inspect(configKey);
+	return folders.map(folder => {
+		const config = vscode.workspace.getConfiguration(undefined, folder.uri).inspect(configKey);
+		if (!config?.workspaceFolderValue) { return null; }
 
-		if (!config || !config.workspaceFolderValue) {
-			continue;
-		}
-
-		settings.push({
+		return {
 			uri: folder.uri,
 			excludes: config.workspaceFolderValue,
 			target: vscode.ConfigurationTarget.WorkspaceFolder
-		});
-	}
-
-	return settings;
+		};
+	}).filter(setting => setting !== null);
 };
 
 const getCurrentState = (settings: { uri?: vscode.Uri, excludes: any, target: vscode.ConfigurationTarget }[]) => {
@@ -93,10 +100,10 @@ const getCurrentState = (settings: { uri?: vscode.Uri, excludes: any, target: vs
 };
 
 const setState = (excludes: any, value: boolean) => {
-	for (const key of Object.keys(excludes)) {
+	Object.keys(excludes).forEach(key => {
 		if (typeof excludes[key] === 'boolean') {
 			excludes[key] = value;
 		}
-	}
+	});
 	return excludes;
 };
