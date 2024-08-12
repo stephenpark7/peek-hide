@@ -4,6 +4,10 @@
   "description": "",
   "author": "Stephen Park",
   "publisher": "stephenpark7",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stephenpark7/peek-hide"
+  },
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.92.0"
